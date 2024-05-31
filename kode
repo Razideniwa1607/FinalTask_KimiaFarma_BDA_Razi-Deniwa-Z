@@ -1,0 +1,64 @@
+-- Keterangan nama tabel 
+-- kf_final_transaction : kft
+-- kf_kantor_cabang : kc
+-- kf_product : pd
+
+-- Common Table Expression
+WITH sales_data AS (
+    SELECT 
+        kft.transaction_id,
+        kft.date,
+        kft.branch_id,
+        kc.branch_name,
+        kc.kota,
+        kc.provinsi,
+        kc.rating as rating_cabang,
+        kft.customer_name,
+        kft.product_id,
+        pd.product_name,
+        pd.price as actual_price,
+        kft.discount_percentage,
+        CASE
+            WHEN pd.price <= 50000 THEN 0.1 * pd.price
+            WHEN pd.price > 50000 AND pd.price <= 100000 THEN 0.15 * pd.price
+            WHEN pd.price > 100000 AND pd.price <= 300000 THEN 0.2 * pd.price
+            WHEN pd.price > 300000 AND pd.price <= 500000 THEN 0.25 * pd.price
+            ELSE 0.3 * pd.price
+        END as persentase_gross_laba,
+        pd.price * (1-kft.discount_percentage) as nett_sales,
+        kft.rating as rating_transaksi
+    FROM 
+        kimia_farma.kf_final_transaction AS kft
+    JOIN 
+        kimia_farma.kf_kantor_cabang AS kc ON kft.branch_id = kc.branch_id
+    JOIN 
+        kimia_farma.kf_product AS pd ON kft.product_id = pd.product_id
+)
+
+-- Query Utama 
+SELECT 
+    transaction_id,
+    date,
+    branch_id,
+    branch_name,
+    kota,
+    provinsi,
+    rating_cabang,
+    customer_name,
+    product_id,
+    product_name,
+    actual_price,
+    discount_percentage,
+    persentase_gross_laba,
+    nett_sales,
+    CASE
+        WHEN nett_sales <= 50000 THEN 0.1 * nett_sales
+        WHEN nett_sales > 50000 AND nett_sales <= 100000 THEN 0.15 *  nett_sales
+        WHEN nett_sales > 100000 AND nett_sales <= 300000 THEN 0.2 *  nett_sales
+        WHEN nett_sales > 300000 AND nett_sales <= 500000 THEN 0.25 *  nett_sales
+        ELSE 0.3 * nett_sales
+    END as nett_profit,
+    rating_transaksi
+FROM sales_data;
+
+
